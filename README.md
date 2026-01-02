@@ -26,7 +26,7 @@ Valoarea senzorilor este un timestamp al ultimei actualizari; datele utile sunt 
    - `judet` (ex. `B`, `CJ`, `GL`)
    - `judet_long` (ex. `Bucuresti`, `Cluj`, `Galati`)
 
-## Noutati in aceasta versiune
+### Changelog v1.1.1
 - Interval de actualizare in secunde cu minim 60s; actualizarea initiala se face la adaugare.
 - UI tradus (en/ro) in `translations/`.
 - Senzorii au `unique_id` stabil si folosesc icon-ul local inclus.
