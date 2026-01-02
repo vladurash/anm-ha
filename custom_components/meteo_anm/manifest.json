@@ -7,5 +7,5 @@
   "codeowners": ["@vladurash"],
   "iot_class": "cloud_polling",
   "config_flow": true,
-  "icon": "custom_components/meteo_anm/icon.png"
+  "icon": "icon.png"
 }
