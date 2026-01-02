@@ -191,6 +191,9 @@ class ANMAlertSensor(Entity):
                     "nebulozitate": properties.get("nebulozitate"),
                     "fenomene": properties.get("fenomen_e"),
                     "zapada": properties.get("zapada"),
+                    "tempapa": properties.get("tempapa"),
+                    "vant": properties.get("vant"),
+                    "last_update": properties.get("actualizat"),
                 }
                 attrs.append(entry)
 

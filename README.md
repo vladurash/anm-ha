@@ -25,7 +25,7 @@ Valoarea senzorilor este un timestamp al ultimei actualizari; datele utile sunt 
 
 Starea vremii pentru localitatea setata:
 ```jinja
-{% set raw = state_attr('sensor.starea_vremii_anm','oras_selectat') %}
+{% set raw = state_attr('sensor.starea_vremii_meteo_anm','oras_selectat') %}
 Localitate: {{ raw.nume }}
 Temperatura: {{ raw.temperatura }} °C
 Umiditate: {{ raw.umiditate }} %
@@ -33,6 +33,9 @@ Presiune: {{ raw.presiune }}
 Nebulozitate: {{ raw.nebulozitate }}
 Fenomen: {{ raw.fenomene }}
 Zapada: {{ raw.zapada }}
+Temperatura apei: {{ raw.tempapa}}
+Vant: {{ raw.vant }}
+Ultima actualizare: {{ raw.last_update }}
 ```
 
 Avertizari generale (lista pe judete):
