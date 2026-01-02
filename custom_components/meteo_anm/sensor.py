@@ -5,6 +5,9 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import unicodedata
+import xml.etree.ElementTree as ET
+import html
+import re
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -14,6 +17,12 @@ SENSOR_DEFINITIONS = [
     {
         "endpoint": "avertizari-generale",
         "name": "Avertizări Generale Meteo ANM",
+    },
+    {
+        "endpoint": "avertizari-xml.php",
+        "name": "Avertizări Generale Meteo ANM (XML)",
+        "format": "xml",
+        "full_url": "https://www.meteoromania.ro/avertizari-xml.php",
     },
     {
         "endpoint": "avertizari-nowcasting",
@@ -46,6 +55,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             localitate=localitate,
             judet=judet,
             judet_long=judet_long,
+            data_format=definition.get("format", "json"),
+            full_url=definition.get("full_url"),
         )
         for definition in SENSOR_DEFINITIONS
     ]
@@ -69,7 +80,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 
 class ANMAlertSensor(Entity):
-    def __init__(self, hass, endpoint, display_name, entry_id, localitate=None, judet=None, judet_long=None):
+    def __init__(self, hass, endpoint, display_name, entry_id, localitate=None, judet=None, judet_long=None, data_format="json", full_url=None):
         self._hass = hass
         self._endpoint = endpoint
         self._name = display_name
@@ -77,6 +88,8 @@ class ANMAlertSensor(Entity):
         self._localitate = (localitate or "").strip().upper()
         self._judet = (judet or "").strip().upper()
         self._judet_long = (judet_long or "").strip().upper()
+        self._data_format = data_format
+        self._full_url = full_url
         self._state = None
         self._attributes = {}
 
@@ -109,10 +122,16 @@ class ANMAlertSensor(Entity):
             return ""
         return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().upper()
 
+    def _clean_html(self, value: str) -> str:
+        if not isinstance(value, str):
+            return value
+        text = html.unescape(value)
+        text = re.sub(r"<[^>]+>", " ", text)
+        return " ".join(text.split())
 
 
     async def async_update(self, now=None):
-        url = f"{BASE_URL}{self._endpoint}"
+        url = self._full_url or f"{BASE_URL}{self._endpoint}"
         _LOGGER.debug("Actualizare date %s de la %s", self._name, url)
         try:
             async with async_timeout.timeout(5):
@@ -122,13 +141,16 @@ class ANMAlertSensor(Entity):
                         _LOGGER.error("Eroare HTTP %s la preluarea datelor ANM de la %s", response.status, url)
                         return
 
-                    data = await response.json()
-                    if not data or isinstance(data, str):
-                        _LOGGER.warning("Nu există date disponibile pentru %s: %s", self._name, data)
-                        self._set_state_inactive()
-                        return
-
-                    parsed = self._parse_data(data)
+                    if self._data_format == "xml":
+                        text = await response.text()
+                        parsed = self._parse_data(text, is_xml=True)
+                    else:
+                        data = await response.json()
+                        if not data or isinstance(data, str):
+                            _LOGGER.warning("Nu există date disponibile pentru %s: %s", self._name, data)
+                            self._set_state_inactive()
+                            return
+                        parsed = self._parse_data(data)
                     if parsed:
                         state_override = parsed.pop("_state", None)
                         self._state = state_override if state_override is not None else "active"
@@ -151,7 +173,9 @@ class ANMAlertSensor(Entity):
             "friendly_name": self._name,
         }
 
-    def _parse_data(self, data):
+    def _parse_data(self, data, is_xml=False):
+        if is_xml:
+            return self._parse_avertizari_generale_xml(data)
         if self._endpoint == "avertizari-generale":
             return self._parse_avertizari_generale(data)
         if self._endpoint == "avertizari-nowcasting":
@@ -161,42 +185,6 @@ class ANMAlertSensor(Entity):
             return self._parse_starea_vremii(data)
         if self._endpoint == "prognoza-orase":
             return self._parse_prognoza_orase(data)
-
-    # def _parse_avertizari_generale(self, data):
-    #     toate_avertizarile = []
-
-    #     avertizare = data.get("avertizare", None)
-    #     if isinstance(avertizare, dict):
-    #         avertizare = [avertizare]
-
-    #     if isinstance(avertizare, list):
-    #         for avertizare_item in avertizare:
-    #             if isinstance(avertizare_item, dict):
-    #                 for judet in avertizare_item.get("judet", []):
-    #                     if isinstance(judet, dict):
-    #                         try:
-    #                             avertizare_judet = {
-    #                                 "judet": judet.get("@attributes", {}).get("cod", "necunoscut"),
-    #                                 "culoare": judet.get("@attributes", {}).get("culoare", "necunoscut"),
-    #                                 "fenomene_vizate": avertizare_item.get("@attributes", {}).get("fenomeneVizate", "necunoscut"),
-    #                                 "data_expirarii": avertizare_item.get("@attributes", {}).get("dataExpirarii", "necunoscut"),
-    #                                 "data_aparitiei": avertizare_item.get("@attributes", {}).get("dataAparitiei", "necunoscut"),
-    #                                 "intervalul": avertizare_item.get("@attributes", {}).get("intervalul", "necunoscut"),
-    #                                 "mesaj": avertizare_item.get("@attributes", {}).get("mesaj", "necunoscut"),
-    #                             }
-    #                             toate_avertizarile.append(avertizare_judet)
-    #                         except KeyError as e:
-    #                             _LOGGER.error("Eroare la procesarea datelor pentru județ: %s", e)
-    #                     else:
-    #                         _LOGGER.error("Judete nu este un dicționar, s-a primit: %s", type(judet))
-    #             else:
-    #                 _LOGGER.error("Avertizare nu este un dicționar, s-a primit: %s", type(avertizare_item))
-    #     else:
-    #         _LOGGER.error("Avertizare nu este un dicționar sau o listă validă, s-a primit: %s", type(avertizare))
-
-    #     if toate_avertizarile:
-    #         return {"avertizari": toate_avertizarile}
-    #     return {}
 
     def _parse_avertizari_generale(self, data):
         avertizare = data.get("avertizare")
@@ -242,6 +230,60 @@ class ANMAlertSensor(Entity):
             return {"avertizari": [match]} if match else {}
         return {}
 
+    def _parse_avertizari_generale_xml(self, text):
+        try:
+            root = ET.fromstring(text)
+        except ET.ParseError as err:
+            _LOGGER.error("Eroare la parsarea XML: %s", err)
+            return {}
+
+        avertizari = []
+        match = None
+
+        for avertizare in root.findall("avertizare"):
+            a_attrs = avertizare.attrib or {}
+            judete = avertizare.findall("judet")
+            zone = avertizare.findall("zona")
+            for judet in judete:
+                j_attrs = judet.attrib or {}
+                cod = (j_attrs.get("cod") or "").upper()
+                culoare = (j_attrs.get("culoare") or "").strip()
+                if not culoare or culoare == "0":
+                    continue
+                zone_match = []
+                if isinstance(zone, list):
+                    for z in zone:
+                        if not isinstance(z, ET.Element):
+                            continue
+                        z_attrs = z.attrib or {}
+                        z_cod = (z_attrs.get("cod") or "").upper()
+                        if z_cod and (z_cod.startswith(f"{cod}_") or z_cod == cod):
+                            z_culoare = (z_attrs.get("culoare") or "").strip()
+                            zone_match.append({
+                                "cod": z_cod,
+                                "culoare": z_culoare,
+                            })
+                entry = {
+                    "judet": cod,
+                    "culoare": culoare,
+                    "fenomene_vizate": a_attrs.get("fenomeneVizate"),
+                    "data_expirarii": a_attrs.get("dataExpirarii"),
+                    "data_aparitiei": a_attrs.get("dataAparitiei"),
+                    "intervalul": a_attrs.get("intervalul"),
+                    "mesaj": self._clean_html(a_attrs.get("mesaj")),
+                    "zona_afectata": self._clean_html(a_attrs.get("zonaAfectata")),
+                    "tip_mesaj": a_attrs.get("numeTipMesaj") or a_attrs.get("tipMesaj"),
+                    "zone": zone_match or None,
+                }
+                avertizari.append(entry)
+                if self._judet and cod == self._judet:
+                    match = entry
+
+        timestamp = datetime.utcnow().isoformat()
+        if self._judet:
+            return {"avertizari": [match], "_state": timestamp.replace("T", " "),} if match else {}
+        return {}
+
     def _parse_starea_vremii(self, data):
         starea_vremii = data.get("features")
         if isinstance(starea_vremii, list):
@@ -274,11 +316,7 @@ class ANMAlertSensor(Entity):
                 }
             # No match means no state update
             return {}
-            # No match, return list without raw features to keep attributes small
-            # return {
-            #     "starea_vremii": attrs,
-            #     "_state": datetime.utcnow().isoformat(),
-            # }
+            
         return {}
         
     def _parse_prognoza_orase(self, data):

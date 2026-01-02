@@ -32,6 +32,11 @@ Valoarea senzorilor este un timestamp al ultimei actualizari; datele utile sunt 
 - Senzorii au `unique_id` stabil si folosesc icon-ul local inclus.
 - Starea si atributele se scriu corect la fiecare update, pastrand doar judetul/localitatea selectate.
 
+### Changelog v1.1.2
+- Adaugat senzor separat pentru avertizari generale din XML (`https://www.meteoromania.ro/avertizari-xml.php`), cu filtrare dupa county si zone asociate.
+- Curatare HTML in mesaj/zona_afectata si ignorare judete cu culoare 0 (fara alerta activa).
+- Interval minim 60s si scriere de stare/atribute dupa fiecare update.
+
 ## Accesarea datelor in Jinja (exemple)
 
 Starea vremii pentru localitatea setata:
