@@ -1,65 +1,80 @@
-# Atentionare meteorologica ANM Home Assistant
+# Avertizare / Nowcasting / Prognoza ANM pentru Home Assistant
 
-1. Despre
+Integrarea foloseste API-ul ANM (`https://www.meteoromania.ro/wp-json/meteoapi/v2/`) si expune mai multi senzori:
+- `sensor.avertizari_meteo_anm` – avertizari generale pe judet.
+- `sensor.avertizari_nowcasting_meteo_anm` – avertizari nowcasting.
+- `sensor.starea_vremii_anm` – stare curenta pe localitate (atribut filtrat dupa localitatea configurata).
+- `sensor.prognoza_orase_meteo_anm` – prognoza pe 5 zile pentru localitatea configurata (sau toate, ca fallback).
 
-Integrarea foloseste API ANM de pe site-ul https://www.meteoromania.ro/ pentru a prelua atentionarile meteorologice si le stocheaza in senzorul sensor.avertizari_meteo_anm. Datele sunt stocate ca si atribut al senzorului.
+Valoarea senzorilor este un timestamp al ultimei actualizari; datele utile sunt in atribute.
 
-Exemplu:
+## Instalare
+1. Descarcati acest repository ca arhiva ZIP.
+2. Copiati folderul `custom_components/alerta_anm` in `/config/custom_components`.
+3. Reporniti Home Assistant.
+4. Adaugati integrarea din Settings > Devices & Services > Integrations > Add Integration (`Alerta ANM`).
+5. Completati:
+   - `update_interval` (minute, implicit 10)
+   - `localitate` (ex. `Bucuresti`)
+   - `judet` (ex. `B`, `CJ`, `GL`)
 
-	- judet: GL
-	culoare: '1'
-	fenomene_vizate: intensificări ale vântului;
-	data_expirarii: 2024-10-02T10:00
-	data_aparitiei: 2024-09-30T10:00
-	intervalul: 01 octombrie, ora 10 – 02 octombrie, ora 10;
+## Accesarea datelor in Jinja (exemple)
 
-Atributul culoare: 1 - cod Galben, 2 - cod Portocaliu, 3 - cod Rosu
-
-
-2. Instalare
-   - Descarcati acest repository in format zip.
-   - Copiati folderul alerta_anm in folderul /config/custom_components din Home Assistant
-   - Reporniti Home Assistant
-   - Adaugati integrarea din Settings > Devices & Services > Integrations > Add Integration
-   - Setati durata in minute pentru preluarea datelor de pe site-ul ANM (Implicit 10 minute)
-  
-3. Pentru a crea un senzor cu informatii pentru regiunea dorita, puteti folosi exemplu_senzor.yaml inlocuind indicativul judetului.
-
-Exemplu:
-
-	{% set judet = 'B' %} - Bucuresti
- 	{% set judet = 'GL' %} - Galati
-  	{% set judet = 'IS' %} - Iasi
-   	etc...
-
- Este necesar sa inlocuiti indicativul in toate atributele senzorului.
-
- 4. Automatizare:
-
+Starea vremii pentru localitatea setata:
+```jinja
+{% set raw = state_attr('sensor.starea_vremii_anm','oras_selectat') %}
+Localitate: {{ raw.nume }}
+Temperatura: {{ raw.temperatura }} °C
+Umiditate: {{ raw.umiditate }} %
+Presiune: {{ raw.presiune }}
+Nebulozitate: {{ raw.nebulozitate }}
+Fenomen: {{ raw.fenomene }}
+Zapada: {{ raw.zapada }}
 ```
+
+Avertizari generale (lista pe judete):
+```jinja
+{% set avertizari = state_attr('sensor.avertizari_meteo_anm','avertizari') %}
+{% for av in avertizari %}
+Jud: {{ av.judet }} | Cod: {{ av.culoare }} | Fenomene: {{ av.fenomene_vizate }}
+Valabil: {{ av.data_aparitiei }} - {{ av.data_expirarii }}
+Mesaj: {{ av.mesaj }}
+{% endfor %}
+```
+
+Nowcasting:
+```jinja
+{% set now = state_attr('sensor.avertizari_nowcasting_meteo_anm','avertizari')[0] %}
+Tip: {{ now.tip_mesaj }} | Zona: {{ now.zona }}
+Semnalare: {{ now.semnalare }}
+Valabil: {{ now.data_inceput }} - {{ now.data_sfarsit }}
+Culoare: {{ now.culoare }}
+```
+
+Prognoza pe 5 zile pentru localitatea setata:
+```jinja
+{% set prog = state_attr('sensor.prognoza_orase_meteo_anm','prognoza_oras') %}
+Localitate: {{ prog.nume }} ({{ prog.data_prognozei }})
+{% for zi in prog.prognoza %}
+- {{ zi.data }}: {{ zi.temp_min }}..{{ zi.temp_max }} °C, {{ zi.fenomen_descriere }} ({{ zi.fenomen_simbol }})
+{% endfor %}
+```
+
+## Automatizare exemplu (notificare pe avertizari)
+```yaml
 alias: Avertizare ANM
-description: ""
 trigger:
   - platform: state
-    entity_id:
-      - sensor.avertizare_meteo_bucuresti
-    to: alerta
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 5
+    entity_id: sensor.avertizari_meteo_anm
+    to: active
 condition: []
 action:
-  - action: notify.mobile_app_xxxxxx
-    metadata: {}
+  - action: notify.mobile_app_telefon
     data:
       title: Avertizare Meteo
-      message: >-
-        {{ state_attr('sensor.avertizare_meteo_bucuresti', 'mesaj') }}.
-        Fenomene: {{ state_attr('sensor.avertizare_meteo_bucuresti',
-        'fenomene_vizate') }}
+      message: >
+        {% set av = state_attr('sensor.avertizari_meteo_anm','avertizari')[0] %}
+        Cod: {{ av.culoare }} | Fenomene: {{ av.fenomene_vizate }}
+        Interval: {{ av.data_aparitiei }} - {{ av.data_expirarii }}
 mode: single
 ```
-
-![Preview](https://raw.githubusercontent.com/aurelmarius/alerta-anm-ha/refs/heads/main/.github/img/IMG_PREV.png)
-
