@@ -3,7 +3,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
 
-class AlertaANMConfigFlow(config_entries.ConfigFlow, domain="alerta_anm"):
+class AlertaANMConfigFlow(config_entries.ConfigFlow, domain="meteo_anm"):
     VERSION = 1
 
     async def async_step_user(self, user_input=None):
@@ -15,7 +15,7 @@ class AlertaANMConfigFlow(config_entries.ConfigFlow, domain="alerta_anm"):
             localitate = user_input.get("localitate")
             if update_interval and update_interval > 0 and judet:
                 cleaned_input = {**user_input, "judet": judet}
-                return self.async_create_entry(title="Alerta ANM", data=cleaned_input)
+                return self.async_create_entry(title="Prognoza Meteo si Avertizari by ANM", data=cleaned_input)
             errors["base"] = "invalid_interval" if not update_interval or update_interval <= 0 else "invalid_judet"
 
         # Formulăm schema de configurare

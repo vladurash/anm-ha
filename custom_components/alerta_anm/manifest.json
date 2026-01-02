@@ -1,11 +1,11 @@
 {
-  "domain": "alerta_anm",
-  "name": "Alerta ANM",
-  "documentation": "https://github.com/aurelmarius/alerta-anm-ha",
-  "version": "1.0.4",
+  "domain": "meteo_anm",
+  "name": "Prognoza Meteo si Avertizari by ANM",
+  "documentation": "https://github.com/vladurash/anm-ha",
+  "version": "1.0.0",
   "requirements": ["requests"],
-  "codeowners": ["@aurelmarius"],
+  "codeowners": ["@vladurash"],
   "iot_class": "cloud_polling",
   "config_flow": true,
-  "icon": "custom_components/alerta_anm/icon.png"
+  "icon": "custom_components/meteo_anm/icon.png"
 }

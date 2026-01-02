@@ -1,4 +1,4 @@
-# Avertizare / Nowcasting / Prognoza ANM pentru Home Assistant
+# Prognoza Meteo si Avertizari by ANM (Home Assistant)
 
 ### Cod sursa original https://github.com/aurelmarius/alerta-anm-ha
 
@@ -15,7 +15,7 @@ Valoarea senzorilor este un timestamp al ultimei actualizari; datele utile sunt 
 1. Descarcati acest repository ca arhiva ZIP.
 2. Copiati folderul `custom_components/alerta_anm` in `/config/custom_components`.
 3. Reporniti Home Assistant.
-4. Adaugati integrarea din Settings > Devices & Services > Integrations > Add Integration (`Alerta ANM`).
+4. Adaugati integrarea din Settings > Devices & Services > Integrations > Add Integration (`Prognoza Meteo si Avertizari by ANM`).
 5. Completati:
    - `update_interval` (minute, implicit 10)
    - `localitate` (ex. `Bucuresti`)
