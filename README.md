@@ -1,5 +1,8 @@
 # Avertizare / Nowcasting / Prognoza ANM pentru Home Assistant
 
+### Cod sursa original https://github.com/aurelmarius/alerta-anm-ha
+
+
 Integrarea foloseste API-ul ANM (`https://www.meteoromania.ro/wp-json/meteoapi/v2/`) si expune mai multi senzori:
 - `sensor.avertizari_meteo_anm` – avertizari generale pe judet.
 - `sensor.avertizari_nowcasting_meteo_anm` – avertizari nowcasting.
