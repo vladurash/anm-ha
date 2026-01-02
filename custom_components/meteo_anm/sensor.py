@@ -20,7 +20,7 @@ SENSOR_DEFINITIONS = [
     },
     {
         "endpoint": "starea-vremii",
-        "name": "Starea Vremii ANM",
+        "name": "Starea Vremii Meteo ANM",
     },
     {
         "endpoint": "prognoza-orase",
@@ -40,6 +40,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             hass,
             definition["endpoint"],
             definition["name"],
+            entry_id=config_entry.entry_id,
             localitate=localitate,
             judet=judet,
         )
@@ -57,10 +58,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 
 class ANMAlertSensor(Entity):
-    def __init__(self, hass, endpoint, display_name, localitate=None, judet=None):
+    def __init__(self, hass, endpoint, display_name, entry_id, localitate=None, judet=None):
         self._hass = hass
         self._endpoint = endpoint
         self._name = display_name
+        self._entry_id = entry_id
         self._localitate = (localitate or "").strip().upper()
         self._judet = (judet or "").strip().upper()
         self._state = None
@@ -81,6 +83,10 @@ class ANMAlertSensor(Entity):
     @property
     def icon(self):
         return "mdi:weather-lightning-rainy"
+
+    @property
+    def unique_id(self):
+        return f"{self._entry_id}_{self._endpoint}"
 
     async def async_update(self, now=None):
         url = f"{BASE_URL}{self._endpoint}"
@@ -185,6 +191,9 @@ class ANMAlertSensor(Entity):
                     "nebulozitate": properties.get("nebulozitate"),
                     "fenomene": properties.get("fenomen_e"),
                     "zapada": properties.get("zapada"),
+                    "tempapa": properties.get("tempapa"),
+                    "vant": properties.get("vant"),
+                    "last_update": properties.get("actualizat").replace("&nbsp;", " "),
                 }
                 attrs.append(entry)
 

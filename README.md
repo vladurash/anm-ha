@@ -6,7 +6,7 @@
 Integrarea foloseste API-ul ANM (`https://www.meteoromania.ro/wp-json/meteoapi/v2/`) si expune mai multi senzori:
 - `sensor.avertizari_meteo_anm` – avertizari generale pe judet.
 - `sensor.avertizari_nowcasting_meteo_anm` – avertizari nowcasting.
-- `sensor.starea_vremii_anm` – stare curenta pe localitate (atribut filtrat dupa localitatea configurata).
+- `sensor.starea_vremii_meteo_anm` – stare curenta pe localitate (atribut filtrat dupa localitatea configurata).
 - `sensor.prognoza_orase_meteo_anm` – prognoza pe 5 zile pentru localitatea configurata (sau toate, ca fallback).
 
 Valoarea senzorilor este un timestamp al ultimei actualizari; datele utile sunt in atribute.
@@ -25,7 +25,7 @@ Valoarea senzorilor este un timestamp al ultimei actualizari; datele utile sunt 
 
 Starea vremii pentru localitatea setata:
 ```jinja
-{% set raw = state_attr('sensor.starea_vremii_anm','oras_selectat') %}
+{% set raw = state_attr('sensor.starea_vremii_meteo_anm','oras_selectat') %}
 Localitate: {{ raw.nume }}
 Temperatura: {{ raw.temperatura }} °C
 Umiditate: {{ raw.umiditate }} %
@@ -33,6 +33,9 @@ Presiune: {{ raw.presiune }}
 Nebulozitate: {{ raw.nebulozitate }}
 Fenomen: {{ raw.fenomene }}
 Zapada: {{ raw.zapada }}
+Temperatura apei: {{ raw.tempapa}}
+Vant: {{ raw.vant }}
+Ultima actualizare: {{ raw.last_update }}
 ```
 
 Avertizari generale (lista pe judete):
