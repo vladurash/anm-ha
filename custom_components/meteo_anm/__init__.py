@@ -1,4 +1,4 @@
-DOMAIN = "alerta_anm"
+DOMAIN = "meteo_anm"
 
 
 async def async_setup_entry(hass, config_entry):

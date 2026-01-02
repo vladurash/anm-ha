@@ -1,4 +1,5 @@
 docker-run.sh
 docker-compose.yaml
 config
-custom_components/alerta_anm/__pycache__
+__pycache__/
+ *.pyc
