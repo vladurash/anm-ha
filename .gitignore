@@ -1,4 +1,4 @@
 docker-run.sh
 docker-compose.yaml
 config
-custom_components/alerta_anm/__pycache__
+custom_components/meteo_anm/__pycache__
