@@ -193,7 +193,7 @@ class ANMAlertSensor(Entity):
                     "zapada": properties.get("zapada"),
                     "tempapa": properties.get("tempapa"),
                     "vant": properties.get("vant"),
-                    "last_update": properties.get("actualizat"),
+                    "last_update": properties.get("actualizat").replace("&nbsp;", " "),
                 }
                 attrs.append(entry)
 
