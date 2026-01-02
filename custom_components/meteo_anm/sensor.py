@@ -20,7 +20,7 @@ SENSOR_DEFINITIONS = [
     },
     {
         "endpoint": "starea-vremii",
-        "name": "Starea Vremii ANM",
+        "name": "Starea Vremii Meteo ANM",
     },
     {
         "endpoint": "prognoza-orase",

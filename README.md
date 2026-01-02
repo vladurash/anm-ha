@@ -6,7 +6,7 @@
 Integrarea foloseste API-ul ANM (`https://www.meteoromania.ro/wp-json/meteoapi/v2/`) si expune mai multi senzori:
 - `sensor.avertizari_meteo_anm` – avertizari generale pe judet.
 - `sensor.avertizari_nowcasting_meteo_anm` – avertizari nowcasting.
-- `sensor.starea_vremii_anm` – stare curenta pe localitate (atribut filtrat dupa localitatea configurata).
+- `sensor.starea_vremii_meteo_anm` – stare curenta pe localitate (atribut filtrat dupa localitatea configurata).
 - `sensor.prognoza_orase_meteo_anm` – prognoza pe 5 zile pentru localitatea configurata (sau toate, ca fallback).
 
 Valoarea senzorilor este un timestamp al ultimei actualizari; datele utile sunt in atribute.
