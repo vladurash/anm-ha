@@ -11,15 +11,26 @@ Integrarea foloseste API-ul ANM (`https://www.meteoromania.ro/wp-json/meteoapi/v
 
 Valoarea senzorilor este un timestamp al ultimei actualizari; datele utile sunt in atribute.
 
-## Instalare
+## Instalare manuala
 1. Descarcati acest repository ca arhiva ZIP.
 2. Copiati folderul `custom_components/meteo_anm` in `/config/custom_components`.
+
+## Instalare cu HACS
+1. In HACS adaugati url-ul https://github.com/vladurash/anm-ha la custom repositories
+2. Cautati dupa aceea integrarea dupa nume (merge si cu "by ANM"), clic pe 3 puncte>Download
 3. Reporniti Home Assistant.
 4. Adaugati integrarea din Settings > Devices & Services > Integrations > Add Integration (`Prognoza Meteo si Avertizari by ANM`).
 5. Completati:
-   - `update_interval` (minute, implicit 10)
+   - `update_interval` (secunde, minim 60; implicit 180)
    - `localitate` (ex. `Bucuresti`)
    - `judet` (ex. `B`, `CJ`, `GL`)
+   - `judet_long` (ex. `Bucuresti`, `Cluj`, `Galati`)
+
+## Noutati in aceasta versiune
+- Interval de actualizare in secunde cu minim 60s; actualizarea initiala se face la adaugare.
+- UI tradus (en/ro) in `translations/`.
+- Senzorii au `unique_id` stabil si folosesc icon-ul local inclus.
+- Starea si atributele se scriu corect la fiecare update, pastrand doar judetul/localitatea selectate.
 
 ## Accesarea datelor in Jinja (exemple)
 

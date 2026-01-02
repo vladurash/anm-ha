@@ -1,0 +1,28 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Prognoza Meteo si Avertizari by ANM",
+        "data": {
+          "update_interval": "Interval actualizare (secunde)",
+          "localitate": "Localitate",
+          "judet": "Județ (abreviere)",
+          "judet_long": "Județ (nume complet)"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "user": {
+        "title": "Opțiuni",
+        "data": {
+          "update_interval": "Interval actualizare (secunde)",
+          "localitate": "Localitate",
+          "judet": "Județ (abreviere)",
+          "judet_long": "Județ (nume complet)"
+        }
+      }
+    }
+  }
+}
