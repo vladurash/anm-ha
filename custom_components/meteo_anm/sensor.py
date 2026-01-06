@@ -36,6 +36,12 @@ SENSOR_DEFINITIONS = [
         "endpoint": "prognoza-orase",
         "name": "Prognoza Orase Meteo ANM",
     },
+    {
+        "endpoint": "avertizari-harta",
+        "name": "Harta Avertizari ANM",
+        "format": "xml_map",
+        "full_url": "https://www.meteoromania.ro/avertizari-xml.php",
+    },
 ]
 
 
@@ -144,6 +150,9 @@ class ANMAlertSensor(Entity):
                     if self._data_format == "xml":
                         text = await response.text()
                         parsed = self._parse_data(text, is_xml=True)
+                    elif self._data_format == "xml_map":
+                        text = await response.text()
+                        parsed = self._parse_avertizari_harta(text)
                     else:
                         data = await response.json()
                         if not data or isinstance(data, str):
@@ -283,6 +292,31 @@ class ANMAlertSensor(Entity):
         if self._judet:
             return {"avertizari": [match], "_state": timestamp.replace("T", " "),} if match else {}
         return {}
+
+    def _parse_avertizari_harta(self, text):
+        try:
+            root = ET.fromstring(text)
+        except ET.ParseError as err:
+            _LOGGER.error("Eroare la parsarea XML harta: %s", err)
+            return {}
+        shapes = []
+        for avertizare in root.findall("avertizare"):
+            for elem in list(avertizare):
+                if elem.tag not in ("judet", "zona"):
+                    continue
+                attrs = elem.attrib or {}
+                cod = (attrs.get("cod") or "").upper().replace("-", "_")
+                culoare = (attrs.get("culoare") or "").strip()
+                if not culoare or culoare == "0":
+                    continue
+                color_name = {"1": "yellow", "2": "orange", "3": "red"}.get(culoare, "green")
+                shapes.append({"id": cod, "color": color_name, "culoare": culoare})
+        if shapes:
+            ts = datetime.utcnow().isoformat().replace("T", " ")
+            return {"shapes": shapes, "_state": ts}
+        return {}
+
+
 
     def _parse_starea_vremii(self, data):
         starea_vremii = data.get("features")
