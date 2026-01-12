@@ -51,6 +51,11 @@ entity: sensor.harta_avertizari_anm
 - Curatare HTML in mesaj/zona_afectata si ignorare judete cu culoare 0 (fara alerta activa).
 - Interval minim 60s si scriere de stare/atribute dupa fiecare update.
 
+### Changelog v1.1.3
+- Copiere automata a fisierelor frontend (`anm-map-card.js`, `anm-harta.svg`) in `/config/www/` la instalare/actualizare.
+- Card harta documentat: resursa `/local/anm-map-card.js`, card `custom:anm-map-card`, folosind harta locala `/local/anm-harta.svg`.
+- Icon-urile se pot seta per senzor din `SENSOR_DEFINITIONS` (fara fallback unic).
+
 ## Accesarea datelor in Jinja (exemple)
 
 Starea vremii pentru localitatea setata:
