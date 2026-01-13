@@ -60,7 +60,7 @@ entity: sensor.harta_avertizari_anm
 
 Starea vremii pentru localitatea setata:
 ```jinja
-{% set raw = state_attr('sensor.starea_vremii_meteo_anm','oras_selectat') %}
+{% assign raw = state_attr('sensor.starea_vremii_meteo_anm','oras_selectat') %}
 Localitate: {{ raw.nume }}
 Temperatura: {{ raw.temperatura }} °C
 Umiditate: {{ raw.umiditate }} %
@@ -75,7 +75,7 @@ Ultima actualizare: {{ raw.last_update }}
 
 Avertizari generale (lista pe judete):
 ```jinja
-{% set avertizari = state_attr('sensor.avertizari_meteo_anm','avertizari') %}
+{% assign avertizari = state_attr('sensor.avertizari_meteo_anm','avertizari') %}
 {% for av in avertizari %}
 Jud: {{ av.judet }} | Cod: {{ av.culoare }} | Fenomene: {{ av.fenomene_vizate }}
 Valabil: {{ av.data_aparitiei }} - {{ av.data_expirarii }}
@@ -85,7 +85,7 @@ Mesaj: {{ av.mesaj }}
 
 Nowcasting:
 ```jinja
-{% set now = state_attr('sensor.avertizari_nowcasting_meteo_anm','avertizari')[0] %}
+{% assign now = state_attr('sensor.avertizari_nowcasting_meteo_anm','avertizari')[0] %}
 Tip: {{ now.tip_mesaj }} | Zona: {{ now.zona }}
 Semnalare: {{ now.semnalare }}
 Valabil: {{ now.data_inceput }} - {{ now.data_sfarsit }}
@@ -94,7 +94,7 @@ Culoare: {{ now.culoare }}
 
 Prognoza pe 5 zile pentru localitatea setata:
 ```jinja
-{% set prog = state_attr('sensor.prognoza_orase_meteo_anm','prognoza_oras') %}
+{% assign prog = state_attr('sensor.prognoza_orase_meteo_anm','prognoza_oras') %}
 Localitate: {{ prog.nume }} ({{ prog.data_prognozei }})
 {% for zi in prog.prognoza %}
 - {{ zi.data }}: {{ zi.temp_min }}..{{ zi.temp_max }} °C, {{ zi.fenomen_descriere }} ({{ zi.fenomen_simbol }})
@@ -114,7 +114,7 @@ action:
     data:
       title: Avertizare Meteo
       message: >
-        {% set av = state_attr('sensor.avertizari_meteo_anm','avertizari')[0] %}
+        {% assign av = state_attr('sensor.avertizari_meteo_anm','avertizari')[0] %}
         Cod: {{ av.culoare }} | Fenomene: {{ av.fenomene_vizate }}
         Interval: {{ av.data_aparitiei }} - {{ av.data_expirarii }}
 mode: single
