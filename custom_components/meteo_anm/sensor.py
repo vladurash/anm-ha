@@ -17,24 +17,36 @@ SENSOR_DEFINITIONS = [
     {
         "endpoint": "avertizari-generale",
         "name": "Avertizări Generale Meteo ANM",
+        "icon": "mdi:weather-cloudy-alert",
     },
     {
         "endpoint": "avertizari-xml.php",
         "name": "Avertizări Generale Meteo ANM (XML)",
         "format": "xml",
         "full_url": "https://www.meteoromania.ro/avertizari-xml.php",
+        "icon": "mdi:alert-box",
     },
     {
         "endpoint": "avertizari-nowcasting",
         "name": "Avertizări Nowcasting Meteo ANM",
+        "icon": "mdi:alert",
     },
     {
         "endpoint": "starea-vremii",
         "name": "Starea Vremii Meteo ANM",
+        "icon": "mdi:weather-hazy",
     },
     {
         "endpoint": "prognoza-orase",
         "name": "Prognoza Orase Meteo ANM",
+        "icon": "mdi:weather-partly-cloudy",
+    },
+    {
+        "endpoint": "avertizari-harta",
+        "name": "Harta Avertizari ANM",
+        "format": "xml_map",
+        "full_url": "https://www.meteoromania.ro/avertizari-xml.php",
+        "icon": "mdi:map-marker-alert",
     },
 ]
 
@@ -47,7 +59,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     judet_long = (options.get("judet_long") or config_entry.data.get("judet_long") or "").strip()
 
     sensors = [
-        ANMAlertSensor(
+        ANMSensors(
             hass,
             definition["endpoint"],
             definition["name"],
@@ -57,6 +69,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             judet_long=judet_long,
             data_format=definition.get("format", "json"),
             full_url=definition.get("full_url"),
+            icon=definition.get("icon"),
         )
         for definition in SENSOR_DEFINITIONS
     ]
@@ -71,16 +84,15 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     async def update_sensors(now):
         _LOGGER.info("Se execută actualizarea senzorilor ANM la intervalul setat.")
-        # for sensor in sensors:
-        #     await sensor.async_update()
         for sensor in sensors:
             sensor.hass.async_create_task(sensor.async_update())
 
     async_track_time_interval(hass, update_sensors, update_interval)
 
 
-class ANMAlertSensor(Entity):
-    def __init__(self, hass, endpoint, display_name, entry_id, localitate=None, judet=None, judet_long=None, data_format="json", full_url=None):
+
+class ANMSensors(Entity):
+    def __init__(self, hass, endpoint, display_name, entry_id, localitate=None, judet=None, judet_long=None, data_format="json", full_url=None, icon=None):
         self._hass = hass
         self._endpoint = endpoint
         self._name = display_name
@@ -92,6 +104,7 @@ class ANMAlertSensor(Entity):
         self._full_url = full_url
         self._state = None
         self._attributes = {}
+        self._icon = icon or "mdi:weather-sunny-alert"
 
     @property
     def name(self):
@@ -107,7 +120,7 @@ class ANMAlertSensor(Entity):
 
     @property
     def icon(self):
-        return "mdi:weather-lightning-rainy"
+        return self._icon
 
     @property
     def unique_id(self):
@@ -144,6 +157,9 @@ class ANMAlertSensor(Entity):
                     if self._data_format == "xml":
                         text = await response.text()
                         parsed = self._parse_data(text, is_xml=True)
+                    elif self._data_format == "xml_map":
+                        text = await response.text()
+                        parsed = self._parse_avertizari_harta(text)
                     else:
                         data = await response.json()
                         if not data or isinstance(data, str):
@@ -283,6 +299,31 @@ class ANMAlertSensor(Entity):
         if self._judet:
             return {"avertizari": [match], "_state": timestamp.replace("T", " "),} if match else {}
         return {}
+
+    def _parse_avertizari_harta(self, text):
+        try:
+            root = ET.fromstring(text)
+        except ET.ParseError as err:
+            _LOGGER.error("Eroare la parsarea XML harta: %s", err)
+            return {}
+        shapes = []
+        for avertizare in root.findall("avertizare"):
+            for elem in list(avertizare):
+                if elem.tag not in ("judet", "zona"):
+                    continue
+                attrs = elem.attrib or {}
+                cod = (attrs.get("cod") or "").upper().replace("-", "_")
+                culoare = (attrs.get("culoare") or "").strip()
+                if not culoare or culoare == "0":
+                    continue
+                color_name = {"1": "yellow", "2": "orange", "3": "red"}.get(culoare, "green")
+                shapes.append({"id": cod, "color": color_name, "culoare": culoare})
+        if shapes:
+            ts = datetime.utcnow().isoformat().replace("T", " ")
+            return {"shapes": shapes, "_state": ts}
+        return {}
+
+
 
     def _parse_starea_vremii(self, data):
         starea_vremii = data.get("features")

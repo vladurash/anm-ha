@@ -26,6 +26,20 @@ Valoarea senzorilor este un timestamp al ultimei actualizari; datele utile sunt 
    - `judet` (ex. `B`, `CJ`, `GL`)
    - `judet_long` (ex. `Bucuresti`, `Cluj`, `Galati`)
 
+### Fisiere frontend (harta avertizari)
+- `anm-map-card.js` (custom card)
+- `anm-harta.svg` (harta ANM)
+
+La instalare/actualizare, integratia copiaza aceste fisiere in `/config/www/` daca nu exista. Daca lipsesc:
+1. Copiati manual din `custom_components/meteo_anm/` catre `/config/www/`.
+2. Adaugati resursa in Lovelace: Settings → Dashboards → Resources → Add → URL `/local/anm-map-card.js`, tip `JavaScript Module`.
+3. Adaugati cardul:
+```yaml
+type: custom:anm-map-card
+entity: sensor.harta_avertizari_anm
+```
+4. Daca folositi o varianta locala a hartii, asigurati-va ca `anm-map-card.js` indica spre `/local/anm-harta.svg`.
+
 ### Changelog v1.1.1
 - Interval de actualizare in secunde cu minim 60s; actualizarea initiala se face la adaugare.
 - UI tradus (en/ro) in `translations/`.
@@ -36,6 +50,11 @@ Valoarea senzorilor este un timestamp al ultimei actualizari; datele utile sunt 
 - Adaugat senzor separat pentru avertizari generale din XML (`https://www.meteoromania.ro/avertizari-xml.php`), cu filtrare dupa county si zone asociate.
 - Curatare HTML in mesaj/zona_afectata si ignorare judete cu culoare 0 (fara alerta activa).
 - Interval minim 60s si scriere de stare/atribute dupa fiecare update.
+
+### Changelog v1.1.3
+- Copiere automata a fisierelor frontend (`anm-map-card.js`, `anm-harta.svg`) in `/config/www/` la instalare/actualizare.
+- Card harta documentat: resursa `/local/anm-map-card.js`, card `custom:anm-map-card`, folosind harta locala `/local/anm-harta.svg`.
+
 
 ## Accesarea datelor in Jinja (exemple)
 
