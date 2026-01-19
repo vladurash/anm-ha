@@ -59,11 +59,19 @@ entity: sensor.harta_avertizari_anm
 ### Changelog v1.1.4
 - Implementare harta, modificare logica setare judet
 
-### Chabgelog v1.1.5
+### Changelog v1.1.5
 - Copiere automata fisiere in folderele de configurare HA
 
 ### Changelog v1.1.6
-- Harta si mesaj de atentionare pentru fiecare mesaj in parte (daca ANM emite mai mult de 1 mesaj)
+- Harta si mesajele sunt acum impartite pe numarul alertei, se pot afisa prin navigare stanga-dreapta
+
+### Changelog v1.1.7
+- La setarea localitatii pentru care se doresc informatiile meteo se poate face excluderea statiilor care nu prezinta interes. De ex, daca avem Bucuresti Filaret, Bucuresti Baneasa, Constanta, Constanta -dig, in configurare setam asa:
+  - Bucuresti !Filaret ==> Scriptul alege urmatoarea varianta care corespunde filtrului
+  - Constanta !dig ==> Scriptul alege urmatoarea varianta care corespunde filtrului
+  - Constanta ==> Scriptul alege prima varianta care e listata
+- Se pot adauga mai multe entry-uri pentru mai multe judete/localitati, fiecare entry va primi ca titlu "Prognoza Meteo si Avertizari by ANM - {localitate} / {judet}"
+
 
 ## Accesarea datelor in Jinja (exemple)
 

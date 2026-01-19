@@ -145,6 +145,20 @@ class ANMSensors(Entity):
         text = re.sub(r"\bAT\s+EN([ȚȚŢT])", r"ATEN\1", text, flags=re.IGNORECASE)
         return text
 
+    def _localitate_match(self, nume: str) -> bool:
+        """Potrivește numele orașului, permițând excluderi: ex. 'CONSTANTA !DIG'."""
+        if not self._localitate:
+            return False
+        name = (nume or "").upper()
+        tokens = [t.strip().upper() for t in self._localitate.split("!") if t.strip()]
+        include = tokens[0] if tokens else self._localitate.upper()
+        excludes = tokens[1:] if len(tokens) > 1 else []
+        if include and include not in name:
+            return False
+        if any(ex in name for ex in excludes):
+            return False
+        return True
+
 
     async def async_update(self, now=None):
         url = self._full_url or f"{BASE_URL}{self._endpoint}"
@@ -405,7 +419,7 @@ class ANMSensors(Entity):
                 attrs.append(entry)
 
                 nume = properties.get("nume")
-                if self._localitate and isinstance(nume, str) and self._localitate in nume.upper():
+                if self._localitate and isinstance(nume, str) and self._localitate_match(nume):
                     oras_selectat = entry
             timestamp = datetime.utcnow().isoformat()
             if oras_selectat:
