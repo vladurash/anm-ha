@@ -72,6 +72,9 @@ entity: sensor.harta_avertizari_anm
   - Constanta ==> Scriptul alege prima varianta care e listata
 - Se pot adauga mai multe entry-uri pentru mai multe judete/localitati, fiecare entry va primi ca titlu "Prognoza Meteo si Avertizari by ANM - {localitate} / {judet}"
 
+### Changelog 1.1.8
+- Aliniere versiune si fortare actualizare fisiere js.
+
 
 ## Accesarea datelor in Jinja (exemple)
 

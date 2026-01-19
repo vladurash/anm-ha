@@ -77,7 +77,6 @@ async def _ensure_assets(hass):
         for src_name, dest_name in assets.items():
             src_path = os.path.join(src_dir, src_name)
             dest_path = os.path.join(www_dir, dest_name)
-            if os.path.exists(src_path) and not os.path.exists(dest_path):
-                shutil.copyfile(src_path, dest_path)
+            shutil.copyfile(src_path, dest_path)
 
     await hass.async_add_executor_job(_copy)
