@@ -2,7 +2,7 @@
   "domain": "meteo_anm",
   "name": "Prognoza Meteo si Avertizari by ANM",
   "documentation": "https://github.com/vladurash/anm-ha",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "requirements": ["requests"],
   "codeowners": ["@vladurash"],
   "iot_class": "cloud_polling",

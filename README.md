@@ -56,6 +56,15 @@ entity: sensor.harta_avertizari_anm
 - Card harta documentat: resursa `/local/anm-map-card.js`, card `custom:anm-map-card`, folosind harta locala `/local/anm-harta.svg`.
 
 
+### Changelog v1.1.4
+- Implementare harta, modificare logica setare judet
+
+### Chabgelog v1.1.5
+- Copiere automata fisiere in folderele de configurare HA
+
+### Changelog v1.1.6
+- Harta si mesaj de atentionare pentru fiecare mesaj in parte (daca ANM emite mai mult de 1 mesaj)
+
 ## Accesarea datelor in Jinja (exemple)
 
 Starea vremii pentru localitatea setata:
