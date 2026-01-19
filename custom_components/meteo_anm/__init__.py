@@ -1,3 +1,5 @@
+from .static_config import JUDETE
+
 DOMAIN = "meteo_anm"
 
 
@@ -28,6 +30,35 @@ async def async_setup(hass, config):
 async def async_reload_entry(hass, entry):
     await hass.config_entries.async_reload(entry.entry_id)
 
+async def async_migrate_entry(hass, config_entry):
+    """Migrare automată: adaugă judet_long și corectează titlul la upgrade."""
+    version = config_entry.version
+    if version >= 2:
+        return True
+
+    data = dict(config_entry.data)
+    options = dict(config_entry.options)
+
+    judet = (options.get("judet") or data.get("judet") or "").strip().upper()
+    judet_long = JUDETE.get(judet, judet)
+    title = config_entry.title
+
+    if judet:
+        if "judet_long" not in data:
+            data["judet_long"] = judet_long
+        if options and "judet_long" not in options:
+            options["judet_long"] = judet_long
+        title = f"Prognoza Meteo si Avertizari by ANM - {judet_long} / {judet}"
+
+    hass.config_entries.async_update_entry(
+        config_entry,
+        title=title,
+        data=data,
+        options=options,
+        version=2,
+    )
+    return True
+
 
 async def _ensure_assets(hass):
     """Copy bundled frontend assets (svg + card) into /config/www/ if missing."""
@@ -46,7 +77,6 @@ async def _ensure_assets(hass):
         for src_name, dest_name in assets.items():
             src_path = os.path.join(src_dir, src_name)
             dest_path = os.path.join(www_dir, dest_name)
-            if os.path.exists(src_path) and not os.path.exists(dest_path):
-                shutil.copyfile(src_path, dest_path)
+            shutil.copyfile(src_path, dest_path)
 
     await hass.async_add_executor_job(_copy)

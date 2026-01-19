@@ -3,3 +3,5 @@ docker-compose.yaml
 config
 __pycache__/
  *.pyc
+ avertizari-xml.xml
+ .vscode/

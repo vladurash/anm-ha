@@ -56,6 +56,26 @@ entity: sensor.harta_avertizari_anm
 - Card harta documentat: resursa `/local/anm-map-card.js`, card `custom:anm-map-card`, folosind harta locala `/local/anm-harta.svg`.
 
 
+### Changelog v1.1.4
+- Implementare harta, modificare logica setare judet
+
+### Changelog v1.1.5
+- Copiere automata fisiere in folderele de configurare HA
+
+### Changelog v1.1.6
+- Harta si mesajele sunt acum impartite pe numarul alertei, se pot afisa prin navigare stanga-dreapta
+
+### Changelog v1.1.7
+- La setarea localitatii pentru care se doresc informatiile meteo se poate face excluderea statiilor care nu prezinta interes. De ex, daca avem Bucuresti Filaret, Bucuresti Baneasa, Constanta, Constanta -dig, in configurare setam asa:
+  - Bucuresti !Filaret ==> Scriptul alege urmatoarea varianta care corespunde filtrului
+  - Constanta !dig ==> Scriptul alege urmatoarea varianta care corespunde filtrului
+  - Constanta ==> Scriptul alege prima varianta care e listata
+- Se pot adauga mai multe entry-uri pentru mai multe judete/localitati, fiecare entry va primi ca titlu "Prognoza Meteo si Avertizari by ANM - {localitate} / {judet}"
+
+### Changelog 1.1.8
+- Aliniere versiune si fortare actualizare fisiere js.
+
+
 ## Accesarea datelor in Jinja (exemple)
 
 Starea vremii pentru localitatea setata:

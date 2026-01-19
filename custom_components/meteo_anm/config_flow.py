@@ -5,7 +5,7 @@ import homeassistant.helpers.config_validation as cv
 from .static_config import JUDETE
 
 class AlertaANMConfigFlow(config_entries.ConfigFlow, domain="meteo_anm"):
-    VERSION = 1
+    VERSION = 2
 
     async def async_step_user(self, user_input=None):
         errors = {}
@@ -16,7 +16,7 @@ class AlertaANMConfigFlow(config_entries.ConfigFlow, domain="meteo_anm"):
             localitate = user_input.get("localitate")
             judet_long =  JUDETE.get(judet, judet)
             if update_interval and update_interval >= 60 and judet:
-                cleaned_input = {**user_input, "judet": judet}
+                cleaned_input = {**user_input, "judet": judet, "judet_long": judet_long}
                 return self.async_create_entry(title=f"Prognoza Meteo si Avertizari by ANM - {judet_long} / {judet}", data=cleaned_input)
             errors["base"] = "invalid_interval" if not update_interval or update_interval < 60 else "invalid_judet"
 
@@ -52,7 +52,7 @@ class AlertaANMOptionsFlowHandler(config_entries.OptionsFlow):
             judet_long = JUDETE.get(judet, judet)
             new_title = f"Prognoza Meteo si Avertizari by ANM - {judet_long} / {judet}"
             self.hass.config_entries.async_update_entry(self._config_entry, title=new_title)
-            return self.async_create_entry(title="", data=user_input)
+            return self.async_create_entry(title="", data={**user_input, "judet": judet, "judet_long": judet_long})
             
         judete_sortate = {k: v for k, v in sorted(JUDETE.items(), key=lambda x: x[1])}
 

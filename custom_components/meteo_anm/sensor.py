@@ -140,7 +140,24 @@ class ANMSensors(Entity):
             return value
         text = html.unescape(value)
         text = re.sub(r"<[^>]+>", " ", text)
-        return " ".join(text.split())
+        text = " ".join(text.split())
+        # Corectăm separări artificiale apărute din HTML (ex: AT ENȚIONARE)
+        text = re.sub(r"\bAT\s+EN([ȚȚŢT])", r"ATEN\1", text, flags=re.IGNORECASE)
+        return text
+
+    def _localitate_match(self, nume: str) -> bool:
+        """Potrivește numele orașului, permițând excluderi: ex. 'CONSTANTA !DIG'."""
+        if not self._localitate:
+            return False
+        name = (nume or "").upper()
+        tokens = [t.strip().upper() for t in self._localitate.split("!") if t.strip()]
+        include = tokens[0] if tokens else self._localitate.upper()
+        excludes = tokens[1:] if len(tokens) > 1 else []
+        if include and include not in name:
+            return False
+        if any(ex in name for ex in excludes):
+            return False
+        return True
 
 
     async def async_update(self, now=None):
@@ -247,6 +264,12 @@ class ANMSensors(Entity):
         return {}
 
     def _parse_avertizari_generale_xml(self, text):
+        """Parsează XML-ul care poate conține mai multe <avertizare>.
+
+        Returnăm toate avertizările în ordine (așa cum vin în feed) și
+        includem mesajul aferent fiecărui set de județe. Dacă este filtrat
+        după județ, păstrăm doar intrările care îl conțin.
+        """
         try:
             root = ET.fromstring(text)
         except ET.ParseError as err:
@@ -254,31 +277,34 @@ class ANMSensors(Entity):
             return {}
 
         avertizari = []
-        match = None
+        filtered = []
 
         for avertizare in root.findall("avertizare"):
             a_attrs = avertizare.attrib or {}
-            judete = avertizare.findall("judet")
-            zone = avertizare.findall("zona")
+            judete = avertizare.findall("judet") or []
+            zone = avertizare.findall("zona") or []
+            judete_entries = []
+
             for judet in judete:
                 j_attrs = judet.attrib or {}
                 cod = (j_attrs.get("cod") or "").upper()
                 culoare = (j_attrs.get("culoare") or "").strip()
                 if not culoare or culoare == "0":
                     continue
+
                 zone_match = []
-                if isinstance(zone, list):
-                    for z in zone:
-                        if not isinstance(z, ET.Element):
-                            continue
-                        z_attrs = z.attrib or {}
-                        z_cod = (z_attrs.get("cod") or "").upper()
-                        if z_cod and (z_cod.startswith(f"{cod}_") or z_cod == cod):
-                            z_culoare = (z_attrs.get("culoare") or "").strip()
-                            zone_match.append({
-                                "cod": z_cod,
-                                "culoare": z_culoare,
-                            })
+                for z in zone:
+                    if not isinstance(z, ET.Element):
+                        continue
+                    z_attrs = z.attrib or {}
+                    z_cod = (z_attrs.get("cod") or "").upper()
+                    if z_cod and (z_cod.startswith(f"{cod}_") or z_cod == cod):
+                        z_culoare = (z_attrs.get("culoare") or "").strip()
+                        zone_match.append({
+                            "cod": z_cod,
+                            "culoare": z_culoare,
+                        })
+
                 entry = {
                     "judet": cod,
                     "culoare": culoare,
@@ -291,23 +317,49 @@ class ANMSensors(Entity):
                     "tip_mesaj": a_attrs.get("numeTipMesaj") or a_attrs.get("tipMesaj"),
                     "zone": zone_match or None,
                 }
-                avertizari.append(entry)
-                if self._judet and cod == self._judet:
-                    match = entry
+                judete_entries.append(entry)
 
-        timestamp = datetime.utcnow().isoformat()
+            alert_entry = {
+                "meta": {
+                    "tip_mesaj": a_attrs.get("numeTipMesaj") or a_attrs.get("tipMesaj"),
+                    "data_aparitiei": a_attrs.get("dataAparitiei"),
+                    "data_expirarii": a_attrs.get("dataExpirarii"),
+                    "fenomene_vizate": a_attrs.get("fenomeneVizate"),
+                    "mesaj": self._clean_html(a_attrs.get("mesaj")),
+                    "culoare": a_attrs.get("culoare"),
+                },
+                "judete": judete_entries,
+            }
+            avertizari.append(alert_entry)
+
+            if self._judet:
+                judet_matches = [j for j in judete_entries if j.get("judet") == self._judet]
+                if judet_matches:
+                    filtered.append({**alert_entry, "judete": judet_matches})
+
+        timestamp = datetime.utcnow().isoformat().replace("T", " ")
         if self._judet:
-            return {"avertizari": [match], "_state": timestamp.replace("T", " "),} if match else {}
-        return {}
+            if not filtered:
+                return {}
+            return {"avertizari": filtered, "_state": timestamp}
+        return {"avertizari": avertizari, "_state": timestamp}
 
     def _parse_avertizari_harta(self, text):
+        """Parsează toate hărțile din XML.
+
+        Pentru fiecare <avertizare> întoarcem lista de zone/județe și mesajul,
+        astfel încât UI-ul să poată afișa cronologic fiecare hartă colorată.
+        """
         try:
             root = ET.fromstring(text)
         except ET.ParseError as err:
             _LOGGER.error("Eroare la parsarea XML harta: %s", err)
             return {}
-        shapes = []
+
+        maps = []
         for avertizare in root.findall("avertizare"):
+            a_attrs = avertizare.attrib or {}
+            shapes = []
             for elem in list(avertizare):
                 if elem.tag not in ("judet", "zona"):
                     continue
@@ -317,10 +369,30 @@ class ANMSensors(Entity):
                 if not culoare or culoare == "0":
                     continue
                 color_name = {"1": "yellow", "2": "orange", "3": "red"}.get(culoare, "green")
-                shapes.append({"id": cod, "color": color_name, "culoare": culoare})
-        if shapes:
+                shapes.append({
+                    "id": cod,
+                    "color": color_name,
+                    "culoare": culoare,
+                })
+            if shapes:
+                maps.append({
+                    "meta": {
+                        "tip_mesaj": a_attrs.get("numeTipMesaj") or a_attrs.get("tipMesaj"),
+                        "data_aparitiei": a_attrs.get("dataAparitiei"),
+                        "data_expirarii": a_attrs.get("dataExpirarii"),
+                        "mesaj": self._clean_html(a_attrs.get("mesaj")),
+                    },
+                    "shapes": shapes,
+                })
+
+        if maps:
             ts = datetime.utcnow().isoformat().replace("T", " ")
-            return {"shapes": shapes, "_state": ts}
+            # păstrăm shapes pentru compatibilitate (prima hartă)
+            first_shapes = maps[0].get("shapes") if maps else None
+            payload = {"maps": maps, "_state": ts}
+            if first_shapes:
+                payload["shapes"] = first_shapes
+            return payload
         return {}
 
 
@@ -347,7 +419,7 @@ class ANMSensors(Entity):
                 attrs.append(entry)
 
                 nume = properties.get("nume")
-                if self._localitate and isinstance(nume, str) and self._localitate in nume.upper():
+                if self._localitate and isinstance(nume, str) and self._localitate_match(nume):
                     oras_selectat = entry
             timestamp = datetime.utcnow().isoformat()
             if oras_selectat:
