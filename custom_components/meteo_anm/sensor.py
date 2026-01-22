@@ -105,6 +105,9 @@ class ANMSensors(Entity):
         self._state = None
         self._attributes = {}
         self._icon = icon or "mdi:weather-sunny-alert"
+        # Home Assistant reads _attr_icon(_color) automatically
+        self._attr_icon = self._icon
+        self._attr_icon_color = None
 
     @property
     def name(self):
@@ -121,6 +124,10 @@ class ANMSensors(Entity):
     @property
     def icon(self):
         return self._icon
+
+    @property
+    def icon_color(self):
+        return self._attr_icon_color
 
     @property
     def unique_id(self):
@@ -144,6 +151,23 @@ class ANMSensors(Entity):
         # Corectăm separări artificiale apărute din HTML (ex: AT ENȚIONARE)
         text = re.sub(r"\bAT\s+EN([ȚȚŢT])", r"ATEN\1", text, flags=re.IGNORECASE)
         return text
+
+    def _color_to_en(self, value: str) -> str:
+        if not isinstance(value, str):
+            return ""
+        normalized = value.strip().lower()
+        mapping = {
+            "verde": "green",
+            "0": "green",
+            "galben": "yellow",
+            "1": "yellow",
+            "portocaliu": "orange",
+            "2": "orange",
+            "rosu": "red",
+            "roșu": "red",
+            "3": "red",
+        }
+        return mapping.get(normalized, normalized)
 
     def _localitate_match(self, nume: str) -> bool:
         """Potrivește numele orașului, permițând excluderi: ex. 'CONSTANTA !DIG'."""
@@ -186,10 +210,14 @@ class ANMSensors(Entity):
                         parsed = self._parse_data(data)
                     if parsed:
                         state_override = parsed.pop("_state", None)
+                        icon_color = parsed.pop("icon_color", None)
                         self._state = state_override if state_override is not None else "active"
+                        if icon_color is not None:
+                            self._attr_icon_color = icon_color
                         self._attributes = {
                             **parsed,
                             "friendly_name": self._name,
+                            "icon_color": self._attr_icon_color,
                         }
                     else:
                         self._set_state_inactive()
@@ -201,6 +229,7 @@ class ANMSensors(Entity):
 
     def _set_state_inactive(self):
         self._state = "inactive"
+        self._attr_icon_color = None
         self._attributes = {
             "avertizari": "Nu exista avertizari",
             "friendly_name": self._name,
@@ -491,11 +520,21 @@ class ANMSensors(Entity):
     def _parse_avertizari_nowcasting(self, data):
         avertizare = data.get("avertizare")
         zona_selectata = None
-        rezultate = []
 
+        # Normalizăm la listă pentru a acoperi și cazul dict
         if isinstance(avertizare, dict):
-            attrs = avertizare.get("@attributes", {}) or {}
+            avertizare = [avertizare]
+        if not isinstance(avertizare, list):
+            return {}
+
+        rezultate = []
+        for item in avertizare:
+            if not isinstance(item, dict):
+                continue
+            attrs = item.get("@attributes", {}) or {}
             zona = attrs.get("zona") or ""
+            color_en = self._color_to_en(attrs.get("numeCuloare") or attrs.get("culoare") or "")
+            
             entry = {
                 "tip_mesaj": attrs.get("numeTipMesaj") or attrs.get("tipMesaj"),
                 "data_inceput": attrs.get("dataInceput"),
@@ -503,24 +542,24 @@ class ANMSensors(Entity):
                 "zona": attrs.get("zona"),
                 "semnalare": attrs.get("semnalare"),
                 "culoare": attrs.get("numeCuloare") or attrs.get("culoare"),
+                "culoare_en": color_en,
                 "modificat": attrs.get("modificat"),
                 "creat": attrs.get("creat"),
+                "icon_color": color_en,
             }
-            
             rezultate.append(entry)
 
-            if self._judet_long:
-                if self._normalize(self._judet_long) in self._normalize(zona):
-                    zona_selectata = entry
-                else:
-                    rezultate = []  # force no match
-            
+            if self._judet_long and self._normalize(self._judet_long) in self._normalize(zona):
+                zona_selectata = entry
 
         timestamp = datetime.utcnow().isoformat()
         if zona_selectata:
+            _LOGGER.debug("Print zona selectata nowcasting: %s", zona_selectata)
+            icon_color = zona_selectata.get("icon_color") or self._color_to_en(zona_selectata.get("culoare") or "")
             return {
                 "avertizare_zona": zona_selectata,
-                "_state": "active",
+                "_state": zona_selectata.get("semnalare") or "active",
+                "icon_color": icon_color,
             }
-        else:
-            return {}
+        # Dacă nu este match, marcăm explicit inactiv.
+        return {"_state": "inactive"}

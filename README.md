@@ -75,6 +75,10 @@ entity: sensor.harta_avertizari_anm
 ### Changelog 1.1.8
 - Aliniere versiune si fortare actualizare fisiere js.
 
+### Changelog 1.1.9
+- Corectare senzor Avertizari Nowcasting si setare culoare icon
+
+
 
 ## Accesarea datelor in Jinja (exemple)
 
